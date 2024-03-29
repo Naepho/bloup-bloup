@@ -3,6 +3,46 @@ import numpy as np
 from scipy import sparse as sp
 import matplotlib.pyplot as plt
 
+## Boundary conditions
+
+def createBoundaryConditions(nodes_num, nodes_dom, flow_rate, island_cl):
+    """
+    Creates a matrix for boundary condtions using nodes_num and nodes_cl
+    Returns nodes_cl
+    """
+
+    # Creating the matrix
+    size_i = len(nodes_num)
+    size_j = len(nodes_num[0])
+    nodes_cl = np.zeros((size_i, size_j))
+
+    # Setting the values
+    for i in range(size_i):
+        for j in range(size_j):
+            if nodes_dom[i, j] == 0:
+                continue
+            elif nodes_dom[i , j] == 1:
+                continue
+            elif nodes_dom[i, j] == 2:
+                # First, if at the border
+                # psi has to be linear at the beginning and same values at the end
+                # Constant around the borders
+                if (i == 1 or i == size_i - 2):
+                    nodes_cl[i, j] = flow_rate * (j) / (size_j - 2)
+                elif j == 1:
+                    nodes_cl[i, j] = flow_rate / (size_j - 2)
+                elif j == size_j - 2:
+                    nodes_cl[i, j] = flow_rate
+
+                # Second, for the island
+                else:
+                    nodes_cl[i, j] = island_cl
+
+            else:
+                continue
+
+    return nodes_cl
+
 ## Making system
 
 def getCoeff(num_left, num_right, num_down, num_up, num_cent, type_cent, cl_cent):
@@ -47,31 +87,31 @@ def createSystem(nodes_num, nodes_dom, nodes_cl):
     - [cl] : the name of the file with the limit conditions
     Returns the matrix A and the vector b
     """
-    # Creates matrix and vector, and gets size of the side of the region
-    # minus 2 because we don't need the zeros on the border
-    size = len(nodes_num) - 2
-    A = sp.lil_matrix(((size)**2, (size)**2))
-    B = np.zeros(((size)**2))
 
-    # Gets the coefficients for each cell in the region and puts them in A and b
-    # +1 in getCoeff because in nodes_num and nodes_dom, there's the first lines of 0
-    for i in range(size):
-        for j in range(size):
-            n, a, b = getCoeff(nodes_num[(i + 1)][(j + 1) - 1], nodes_num[(i + 1)][(j + 1) + 1], \
-                               nodes_num[(i + 1) - 1][(j + 1)], nodes_num[(i + 1) + 1][(j + 1)], \
-                               nodes_num[(i + 1)][(j + 1)], nodes_dom[(i + 1)][(j + 1)], \
-                               nodes_cl[(i + 1)][(j + 1)])
+    # Getting the number of elements to solve in the matrix
+    # size = np.count_nonzero(nodes_num)
+    size = np.max(nodes_num)
 
-            # Continues if outside of the region
-            if type(a) == int and a == 0:
-                continue
-            # Puts the coefficients in A and b
-            # In getCoeff, it's j but here it's n because j was already taken by the loop
-            # n[k] - 1 because the numerotation starts at 1 in n
-            else:
-                for k in range(len(n)):
-                    A[i * (size) + j, n[k] - 1] = a[k]
-                B[i * (size) + j] = b
+    # Creating A and B
+    A = sp.lil_matrix((size, size))
+    B = np.zeros((size))
+
+    # Making it work
+    for k in range(1, size + 1):
+        tup = np.where(nodes_num == k)
+        i = tup[0][0]
+        j = tup[1][0]
+
+        n, a, b = getCoeff(nodes_num[i, j - 1], nodes_num[i, j + 1], \
+                           nodes_num[i - 1, j], nodes_num[i + 1, j], \
+                           nodes_num[i, j], nodes_dom[i, j], nodes_cl[i, j])
+
+        if type(a) == int and a == 0:
+            continue
+        else:
+            for p in range(len(n)):
+                A[k - 1, n[p] - 1] = a[p]
+            B[k - 1] = b
 
     return [A, B]
 
