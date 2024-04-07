@@ -19,27 +19,3 @@ def deriv(f_left, f_c, f_right, type_left, type_c, type_right, h):
     else:
         return (f_right-f_left)/(2*h)
 
-def getSpeed(psi_grid, nodes_num, nodes_dom, h):
-    size = np.max(nodes_num)
-
-    horiz_speeds = np.zeros_like(psi_grid)
-    vert_speeds = np.zeros_like(psi_grid)
-    norm_speeds = np.zeros_like(psi_grid)
-
-    for k in range(1, size + 1):
-        tup = np.where(nodes_num == k)
-        i = tup[0][0]
-        j = tup[1][0]
-
-        horizontal_speed = deriv(psi_grid[i - 1, j], psi_grid[i, j], psi_grid[i + 1, j], \
-                                 nodes_dom[i - 1, j], nodes_dom[i, j], nodes_dom[i + 1, j], \
-                                 h)
-        vertical_speed = deriv(psi_grid[i, j - 1], psi_grid[i, j], psi_grid[i, j + 1], \
-                                 nodes_dom[i, j - 1], nodes_dom[i, j], nodes_dom[i, j + 1], \
-                                 h)
-
-        horiz_speeds[i, j] = horizontal_speed
-        vert_speeds[i, j] = vertical_speed
-        norm_speeds[i, j] = np.sqrt(horizontal_speed**2 + vertical_speed**2)
-
-    return [horiz_speeds, vert_speeds, norm_speeds]

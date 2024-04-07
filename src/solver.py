@@ -2,6 +2,7 @@
 import numpy as np
 from scipy import sparse as sp
 import matplotlib.pyplot as plt
+from getCoeff import getCoeff
 
 ## Boundary conditions
 
@@ -45,38 +46,6 @@ def createBoundaryConditions(nodes_num, nodes_dom, flow_rate, island_cl):
 
 ## Making system
 
-def getCoeff(num_left, num_right, num_down, num_up, num_cent, type_cent, cl_cent):
-    """
-    This function returns the values to be put inside A and b given parameters.
-    For more details, see the project statement.
-    """
-
-    # If, for some reason, we get something outside of the simulation
-    if type_cent == 0:
-        a = np.array([0])
-        j = a
-        b = 0
-
-    # Node inside the simulation
-    elif type_cent == 1:
-        a = np.array([1, 1, 1, 1, -4])
-        j = np.array([num_left, num_right, num_down, num_up, num_cent])
-        b = 0
-
-    # Node at the limit
-    elif type_cent == 2:
-        a = np.array([1])
-        j = np.array([num_cent])
-        b = cl_cent
-
-    # Failsafe
-    else:
-        a = 0
-        j = 0
-        b = 0
-
-    return [j, a, b]
-
 def createSystem(nodes_num, nodes_dom, nodes_cl):
     """
     Function that builds the system to be solved.
@@ -91,27 +60,30 @@ def createSystem(nodes_num, nodes_dom, nodes_cl):
     # Getting the number of elements to solve in the matrix
     # size = np.count_nonzero(nodes_num)
     size = np.max(nodes_num)
+    size_i = len(nodes_num)
+    size_j = len(nodes_num[0])
 
     # Creating A and B
     A = sp.lil_matrix((size, size))
     B = np.zeros((size))
 
     # Making it work
-    for k in range(1, size + 1):
-        tup = np.where(nodes_num == k)
-        i = tup[0][0]
-        j = tup[1][0]
+    for i in range(size_i):
+        for j in range(size_j):
+            if nodes_dom[i, j] == 0:
+                continue
 
-        n, a, b = getCoeff(nodes_num[i, j - 1], nodes_num[i, j + 1], \
-                           nodes_num[i - 1, j], nodes_num[i + 1, j], \
-                           nodes_num[i, j], nodes_dom[i, j], nodes_cl[i, j])
+            n, a, b = getCoeff(nodes_num[i, j - 1], nodes_num[i, j + 1], \
+                               nodes_num[i - 1, j], nodes_num[i + 1, j], \
+                               nodes_num[i, j], nodes_dom[i, j], nodes_cl[i, j])
 
-        if type(a) == int and a == 0:
-            continue
-        else:
-            for p in range(len(n)):
-                A[k - 1, n[p] - 1] = a[p]
-            B[k - 1] = b
+            if type(a) == int and a == 0:
+                continue
+            else:
+                k = nodes_num[i, j]
+                for p in range(len(n)):
+                    A[k - 1, n[p] - 1] = a[p]
+                B[k - 1] = b
 
     return [A, B]
 
