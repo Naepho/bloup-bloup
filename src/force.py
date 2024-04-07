@@ -1,13 +1,8 @@
-import numpy as np
-
 def force(p,x,y):
-    f = np.zeros(2)
-    length = len(p) - 1
+    fx, fy = 0 , 0
 
-    for i in range(length):
-        pos = np.array([x[i + 1] - x[i], y[i + 1] - y[i]])
-        # fx += (p[i]+p[i+1])*(x[i+1]-x[i])/2
-        # fy += (p[i]+p[i+1])*(y[i+1]-y[i])/2
-        f += (p[i + 1] + p[i]) * pos / 2
+    for i in range(len(p) -1):
+        fx += (p[i]+p[i+1])*(y[i+1]-y[i])/2
+        fy += -1 * (p[i]+p[i+1])*(x[i+1]-x[i])/2
 
-    return f[0], f[1]
+    return fx, fy

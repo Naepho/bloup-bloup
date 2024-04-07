@@ -94,37 +94,3 @@ def solve_syst(A, b):
     """
     x = sp.linalg.spsolve(A,b)
     return x
-
-if __name__=="__main__":
-    # Import file into matrix
-    path = "."
-    nodes_num = np.loadtxt(path + '/' + "1-num.txt", dtype = int)
-    nodes_dom = np.loadtxt(path + '/' + "1-dom.txt", dtype = int)
-    nodes_cl = np.loadtxt(path + '/' + "1-cl.txt", dtype = float)
-
-    # Creating the system
-    A, b = createSystem(nodes_num, nodes_dom, nodes_cl)
-
-    # Loads the numerotation, and gets the size of the side of the whole problem
-    nodes_num = np.loadtxt("./1-num.txt", dtype = int)
-    size = len(nodes_num)
-    
-    # Transforms A for solving, and solves
-    A = A.tocsr()
-    x = solve_syst(A, b)
-
-    # Maps the solution to the grid of the problem
-    grid = np.zeros((size, size))
-    for i in range(size):
-        for j in range(size):
-            # For points outside of the region
-            if (i == 0 or j == 0 or i == size - 1 or j == size - 1):
-                grid[i][j] = 0
-            # Gets the index of (i,j), and then puts its value in the grid
-            # minus 1 because numerotation starts at 1
-            else:
-                index = nodes_num[i][j]
-                grid[i][j] = x[index - 1]
-    print(grid)
-    plt.imshow(grid)
-    plt.show()

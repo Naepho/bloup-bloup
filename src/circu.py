@@ -11,5 +11,7 @@ def circu(u, v, x, y):
 
         mean_speed = (speed_1 + speed_2) / 2
         c += np.dot(mean_speed, pos)
+        print("temp circ at i = " + str(i) + " with c = " + str(c))
+        print("\t mean_speed : " + str(mean_speed) + " and pos : " + str(pos))
 
     return c

@@ -9,7 +9,7 @@ import pressure
 import circu
 import force
 
-def displayPsi(psi, nodes_num):
+def displayPsi(psi, nodes_num, nodes_dom):
     size_i = len(nodes_num)
     size_j = len(nodes_num[0])
 
@@ -17,7 +17,7 @@ def displayPsi(psi, nodes_num):
     for i in range(size_i):
         for j in range(size_j):
             # For points outside of the region
-            if (i == 0 or j == 0 or i == size_i - 1 or j == size_j - 1):
+            if (nodes_dom[i, j] == 0):
                 grid[i][j] = 0
             # Gets the index of (i,j), and then puts its value in the grid
             # minus 1 because numerotation starts at 1
@@ -44,9 +44,14 @@ def solveOptimize(flow_rate, island_cl, h, nodes_num, nodes_dom, x, y, goal):
     A = A.tocsr()
     psi = solver.solve_syst(A, b)
 
-    psi_grid = displayPsi(psi, nodes_num)
+    psi_grid = displayPsi(psi, nodes_num, nodes_dom)
 
     horiz_speeds, vert_speeds, norm_speeds = velocity.velocity(psi_grid, nodes_num, nodes_dom, h)
+    x = [0, 2, 4, 6, 8, 10, 10, 10, 10, 10, 10, 8, 6, 4, 2, 0, 0, 0, 0, 0, 0]
+    y = [0, 0, 0, 0, 0, 0, 2, 4, 6, 8, 10, 10, 10, 10, 10, 10, 8, 6, 4, 2, 0]
+    for i in range(len(x)):
+        x[i] += 300
+        y[i] += 35
 
     u = np.zeros_like(x, dtype = float)
     v = np.zeros_like(y, dtype = float)
@@ -61,7 +66,7 @@ def solveOptimize(flow_rate, island_cl, h, nodes_num, nodes_dom, x, y, goal):
 
     pressures = pressure.pressure(norm_speeds)
 
-    return (pressures[356, 34] - pressures[356, 106])
+    return (c - goal)
 
 if __name__=="__main__":
     start_time = time.time()
@@ -85,10 +90,11 @@ if __name__=="__main__":
     A = A.tocsr()
     psi = solver.solve_syst(A, b)
 
-    psi_grid = displayPsi(psi, nodes_num)
+    psi_grid = displayPsi(psi, nodes_num, nodes_dom)
 
     horiz_speeds, vert_speeds, norm_speeds = velocity.velocity(psi_grid, nodes_num, nodes_dom, h)
     print("Max speed : " + str(norm_speeds.max()))
+    print("Mean speed : " + str(norm_speeds.mean()))
 
     flow_rate_computed = 0
     for i in vert_speeds[1]:
@@ -109,14 +115,14 @@ if __name__=="__main__":
     plt.imshow(pressures, cmap="magma")
     plt.title("Pression")
 
-    x = [1, 2, 3, 4, 5, 6, 7, 7, 7, 7, 7, 6, 5, 4, 3, 2, 1, 1, 1, 1, 1]
-    y = [1, 1, 1, 1, 1, 1, 1, 2, 3, 4, 5, 5, 5, 5, 5, 5, 5, 4, 3, 2, 1]
-    contourObj = np.loadtxt(path + '/' + "4-contourObj.txt", dtype = int)
-    x = contourObj[:, 0]
-    y = contourObj[:, 1]
-    # for i in range(len(x)):
-    #     x[i] += 300
-    #     y[i] += 40
+    x = [0, 2, 4, 4, 4, 2, 0, 0, 0]
+    y = [0, 0, 0, 2, 4, 4, 4, 2, 0]
+    # contourObj = np.loadtxt(path + '/' + "4-contourObj.txt", dtype = int)
+    # x = contourObj[:, 0]
+    # y = contourObj[:, 1]
+    for i in range(len(x)):
+        x[i] += 275
+        y[i] += 25
     u = np.zeros_like(x, dtype = float)
     v = np.zeros_like(y, dtype = float)
     p = np.zeros_like(x)
