@@ -5,9 +5,9 @@ def velocity(psi_grid, nodes_num, nodes_dom, h):
     size_i = len(nodes_num)
     size_j = len(nodes_num[0])
 
-    horiz_speeds = np.zeros_like(psi_grid)
-    vert_speeds = np.zeros_like(psi_grid)
-    norm_speeds = np.zeros_like(psi_grid)
+    horiz_speeds = np.zeros_like(psi_grid, dtype=float)
+    vert_speeds = np.zeros_like(psi_grid, dtype = float)
+    norm_speeds = np.zeros_like(psi_grid, dtype = float)
 
     for i in range(size_i):
         for j in range(size_j):

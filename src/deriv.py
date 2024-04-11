@@ -13,9 +13,8 @@ def deriv(f_left, f_c, f_right, type_left, type_c, type_right, h):
         print("Erreur: c = ",type_c, " et h = ", h)
         return 0
     elif type_left == 0:
-        return (f_right-f_c)/h
+        return (f_right - f_c)/h
     elif type_right == 0:
-        return (f_c-f_left)/h
+        return (f_c - f_left)/h
     else:
-        return (f_right-f_left)/(2*h)
-
+        return (f_right - f_left) / (2 * h)

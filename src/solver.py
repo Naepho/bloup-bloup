@@ -39,8 +39,11 @@ def createBoundaryConditions(nodes_num, nodes_dom, flow_rate, island_cl):
                 else:
                     nodes_cl[i, j] = island_cl
 
+                nodes_cl[i, j] -= flow_rate / (size_j - 2)
+
             else:
                 continue
+
 
     return nodes_cl
 

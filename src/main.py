@@ -47,8 +47,8 @@ def solveOptimize(flow_rate, island_cl, h, nodes_num, nodes_dom, x, y, goal):
     psi_grid = displayPsi(psi, nodes_num, nodes_dom)
 
     horiz_speeds, vert_speeds, norm_speeds = velocity.velocity(psi_grid, nodes_num, nodes_dom, h)
-    x = [0, 2, 4, 6, 8, 10, 10, 10, 10, 10, 10, 8, 6, 4, 2, 0, 0, 0, 0, 0, 0]
-    y = [0, 0, 0, 0, 0, 0, 2, 4, 6, 8, 10, 10, 10, 10, 10, 10, 8, 6, 4, 2, 0]
+    x = [0, 1, 2, 3, 3, 3, 3, 2, 1, 0, 0, 0, 0]
+    y = [0, 0, 0, 0, 1, 2, 3, 3, 3, 3, 2, 1, 0]
     for i in range(len(x)):
         x[i] += 300
         y[i] += 35
@@ -66,7 +66,7 @@ def solveOptimize(flow_rate, island_cl, h, nodes_num, nodes_dom, x, y, goal):
 
     pressures = pressure.pressure(norm_speeds)
 
-    return (c - goal)
+    return (pressures[300, 30] - pressures[300, 105] - goal)
 
 if __name__=="__main__":
     start_time = time.time()
@@ -106,7 +106,7 @@ if __name__=="__main__":
     pressures = pressure.pressure(norm_speeds)
 
     plt.subplot(1, 3, 1)
-    plt.imshow(norm_speeds, cmap="magma")
+    plt.imshow(vert_speeds, cmap="magma")
     plt.title("Norme de la vitesse")
     plt.subplot(1, 3, 3)
     plt.imshow(psi_grid, cmap="magma")
@@ -115,21 +115,23 @@ if __name__=="__main__":
     plt.imshow(pressures, cmap="magma")
     plt.title("Pression")
 
-    x = [0, 2, 4, 4, 4, 2, 0, 0, 0]
-    y = [0, 0, 0, 2, 4, 4, 4, 2, 0]
+    x = [0, 1, 2, 3, 3, 3, 3, 2, 1, 0, 0, 0, 0]
+    y = [0, 0, 0, 0, 1, 2, 3, 3, 3, 3, 2, 1, 0]
     # contourObj = np.loadtxt(path + '/' + "4-contourObj.txt", dtype = int)
     # x = contourObj[:, 0]
     # y = contourObj[:, 1]
+    x = np.array(x, dtype = float)
+    y = np.array(y, dtype = float)
     for i in range(len(x)):
-        x[i] += 275
-        y[i] += 25
+        x[i] += 300
+        y[i] += 35
     u = np.zeros_like(x, dtype = float)
     v = np.zeros_like(y, dtype = float)
-    p = np.zeros_like(x)
+    p = np.zeros_like(x, dtype = float)
     for i in range(len(x)):
-        u[i] = horiz_speeds[x[i], y[i]]
-        v[i] = vert_speeds[x[i], y[i]]
-        p[i] = pressures[x[i], y[i]]
+        u[i] = horiz_speeds[int(x[i]), int(y[i])]
+        v[i] = vert_speeds[int(x[i]), int(y[i])]
+        p[i] = pressures[int(x[i]), int(y[i])]
 
     c = circu.circu(u, v, x, y)
     fx, fy = force.force(p, x, y)
