@@ -4,6 +4,25 @@ from scipy import sparse as sp
 import matplotlib.pyplot as plt
 from getCoeff import getCoeff
 
+## Ajusting the output grid
+def displayPsi(psi, nodes_num, nodes_dom):
+    size_i = len(nodes_num)
+    size_j = len(nodes_num[0])
+
+    grid = np.zeros((size_i, size_j), dtype = np.longdouble)
+    for i in range(size_i):
+        for j in range(size_j):
+            # For points outside of the region
+            if (nodes_dom[i, j] == 0):
+                grid[i][j] = 0
+            # Gets the index of (i,j), and then puts its value in the grid
+            # minus 1 because numerotation starts at 1
+            else:
+                index = nodes_num[i][j]
+                grid[i][j] = psi[index - 1]
+    return grid
+
+
 ## Boundary conditions
 
 def createBoundaryConditions(nodes_num, nodes_dom, flow_rate, island_cl):
@@ -15,7 +34,7 @@ def createBoundaryConditions(nodes_num, nodes_dom, flow_rate, island_cl):
     # Creating the matrix
     size_i = len(nodes_num)
     size_j = len(nodes_num[0])
-    nodes_cl = np.zeros((size_i, size_j))
+    nodes_cl = np.zeros((size_i, size_j), dtype = np.longdouble)
 
     # Setting the values
     for i in range(size_i):
@@ -28,18 +47,18 @@ def createBoundaryConditions(nodes_num, nodes_dom, flow_rate, island_cl):
                 # First, if at the border
                 # psi has to be linear at the beginning and same values at the end
                 # Constant around the borders
-                if (i == 1 or i == size_i - 2):
-                    nodes_cl[i, j] = flow_rate * (j) / (size_j - 2)
-                elif j == 1:
-                    nodes_cl[i, j] = flow_rate / (size_j - 2)
-                elif j == size_j - 2:
+                if (j == 1 or j == size_j - 2):
+                    nodes_cl[i, j] = flow_rate * (i) / (size_i - 2)
+                elif i == 1:
+                    nodes_cl[i, j] = flow_rate / (size_i - 2)
+                elif i == size_i - 2:
                     nodes_cl[i, j] = flow_rate
 
                 # Second, for the island
                 else:
                     nodes_cl[i, j] = island_cl
 
-                nodes_cl[i, j] -= flow_rate / (size_j - 2)
+                nodes_cl[i, j] -= flow_rate / (size_i - 2)
 
             else:
                 continue
@@ -67,8 +86,8 @@ def createSystem(nodes_num, nodes_dom, nodes_cl):
     size_j = len(nodes_num[0])
 
     # Creating A and B
-    A = sp.lil_matrix((size, size))
-    B = np.zeros((size))
+    A = sp.lil_matrix((size, size), dtype = np.double)
+    B = np.zeros((size), dtype = np.double)
 
     # Making it work
     for i in range(size_i):
@@ -90,10 +109,16 @@ def createSystem(nodes_num, nodes_dom, nodes_cl):
 
     return [A, B]
 
-def solve_syst(A, b):
+def solve_syst(nodes_num, nodes_dom, nodes_cl, flow_rate, island_cl):
     """
     Solves the system.
     Is shorter to write
     """
+
+    if type(nodes_cl) != "NoneType":
+        nodes_cl = createBoundaryConditions(nodes_num, nodes_dom, flow_rate, island_cl)
+    A, b = createSystem(nodes_num, nodes_dom, nodes_cl)
+    A = A.tocsr()
     x = sp.linalg.spsolve(A,b)
-    return x
+    grid = displayPsi(x, nodes_num, nodes_dom)
+    return grid

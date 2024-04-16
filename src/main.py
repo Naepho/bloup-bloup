@@ -9,55 +9,23 @@ import pressure
 import circu
 import force
 
-def displayPsi(psi, nodes_num, nodes_dom):
-    size_i = len(nodes_num)
-    size_j = len(nodes_num[0])
-
-    grid = np.zeros((size_i, size_j))
-    for i in range(size_i):
-        for j in range(size_j):
-            # For points outside of the region
-            if (nodes_dom[i, j] == 0):
-                grid[i][j] = 0
-            # Gets the index of (i,j), and then puts its value in the grid
-            # minus 1 because numerotation starts at 1
-            else:
-                index = nodes_num[i][j]
-                grid[i][j] = psi[index - 1]
-    return grid
-
-def optimize_circu(goal, initial_guess):
-    path = "./files"
-    nodes_num = np.loadtxt(path + '/' + "4-num.txt", dtype = int)
-    nodes_dom = np.loadtxt(path + '/' + "4-dom.txt", dtype = int)
-    contourObj = np.loadtxt(path + '/' + "4-contourObj.txt", dtype = int)
-    x = contourObj[:, 0]
-    y = contourObj[:, 1]
-
-    solution = newton(lambda k: solveOptimize(5, k, 2, nodes_num, nodes_dom, x, y, goal), initial_guess)
+def optimize_circu(goal, initial_guess, nodes_num, nodes_dom, x, y):
+    solution = newton(lambda k: solveOptimize(5, k, 2, nodes_num, nodes_dom, x, y, goal), initial_guess, tol=1e-17)
     return solution
 
 def solveOptimize(flow_rate, island_cl, h, nodes_num, nodes_dom, x, y, goal):
     nodes_cl = solver.createBoundaryConditions(nodes_num, nodes_dom, flow_rate, island_cl)
 
-    A, b = solver.createSystem(nodes_num, nodes_dom, nodes_cl)
-    A = A.tocsr()
-    psi = solver.solve_syst(A, b)
-
-    psi_grid = displayPsi(psi, nodes_num, nodes_dom)
+    psi_grid = solver.solve_syst(nodes_num, nodes_dom, None, flow_rate, island_cl)
 
     horiz_speeds, vert_speeds, norm_speeds = velocity.velocity(psi_grid, nodes_num, nodes_dom, h)
-    x = [0, 1, 2, 3, 3, 3, 3, 2, 1, 0, 0, 0, 0]
-    y = [0, 0, 0, 0, 1, 2, 3, 3, 3, 3, 2, 1, 0]
-    for i in range(len(x)):
-        x[i] += 300
-        y[i] += 35
 
     u = np.zeros_like(x, dtype = float)
     v = np.zeros_like(y, dtype = float)
+    p = np.zeros_like(x, dtype = float)
     for i in range(len(x)):
-        u[i] = horiz_speeds[x[i], y[i]]
-        v[i] = vert_speeds[x[i], y[i]]
+        u[i] = horiz_speeds[int(x[i]), int(y[i])]
+        v[i] = vert_speeds[int(x[i]), int(y[i])]
 
     c = circu.circu(u, v, x, y)
 
@@ -66,31 +34,131 @@ def solveOptimize(flow_rate, island_cl, h, nodes_num, nodes_dom, x, y, goal):
 
     pressures = pressure.pressure(norm_speeds)
 
-    return (pressures[300, 30] - pressures[300, 105] - goal)
+    return (c - goal)
 
 if __name__=="__main__":
     start_time = time.time()
     flow_rate = (10 * 4 + 5 * 2) * 0.1
     print("Flow rate : " + str(flow_rate))
-    island_cl = 3.2 # 3.2 is really good
-    island_cl = optimize_circu(0, 0)
-    print("Optimal island_cl : " + str(island_cl))
-    h = 2
 
-    # Importing files
-    path = "./files"
-    nodes_num = np.loadtxt(path + '/' + "4-num.txt", dtype = int)
-    nodes_dom = np.loadtxt(path + '/' + "4-dom.txt", dtype = int)
-#     nodes_cl = np.loadtxt(path + '/' + "1-cl.txt", dtype = float)
+    ## Getting all values dependent on case
+    case = 4
 
-    # Creating boundary conditions
-    nodes_cl = solver.createBoundaryConditions(nodes_num, nodes_dom, flow_rate, island_cl)
+    if case == 1:
+        h = 0.5
 
-    A, b = solver.createSystem(nodes_num, nodes_dom, nodes_cl)
-    A = A.tocsr()
-    psi = solver.solve_syst(A, b)
+        # Importing files
+        path = "./files"
+        nodes_num = np.loadtxt(path + '/' + "1-num.txt", dtype = int)
+        nodes_num = np.rot90(nodes_num, -1)
+        nodes_dom = np.loadtxt(path + '/' + "1-dom.txt", dtype = int)
+        nodes_dom = np.rot90(nodes_dom, -1)
+        nodes_cl = np.loadtxt(path + '/' + "1-cl.txt", dtype = float)
+        nodes_cl = np.rot90(nodes_cl, -1)
 
-    psi_grid = displayPsi(psi, nodes_num, nodes_dom)
+        ## Circulation and forces not needed
+        island_cl = None
+
+    if case == 2:
+        h = 2
+
+        # Importing files
+        path = "./files"
+        nodes_num = np.loadtxt(path + '/' + "2-num.txt", dtype = int)
+        nodes_num = np.rot90(nodes_num, -1)
+        nodes_dom = np.loadtxt(path + '/' + "2-dom.txt", dtype = int)
+        nodes_dom = np.rot90(nodes_dom, -1)
+        nodes_cl = None
+
+        island_cl = 2.5
+        size_of_perimeter = (72 - 43) * 2 + (453 - 268) * 2
+        x = np.zeros(size_of_perimeter + 1)
+        y = np.zeros(size_of_perimeter + 1)
+
+        count = 0
+        for i in range(43, 72):
+            x[count] = i
+            y[count] = 268
+            count += 1
+        for i in range(268, 453):
+            x[count] = 72
+            y[count] = i
+            count += 1
+        for i in range(72, 43, -1):
+            x[count] = i
+            y[count] = 453
+            count += 1
+        for i in range(453, 268, -1):
+            x[count] = 43
+            y[count] = i
+            count += 1
+        x[-1] = 43
+        y[-1] = 268
+        island_cl = optimize_circu(0, 0, nodes_num, nodes_dom, x, y)
+        print(island_cl)
+
+    if case == 3:
+        h = 2
+
+        # Importing files
+        path = "./files"
+        nodes_num = np.loadtxt(path + '/' + "3-num.txt", dtype = int)
+        nodes_num = np.rot90(nodes_num, -1)
+        nodes_dom = np.loadtxt(path + '/' + "3-dom.txt", dtype = int)
+        nodes_dom = np.rot90(nodes_dom, -1)
+        nodes_cl = None
+
+        size_of_perimeter = (86 - 62) * 2 + (451 - 271) * 2
+        x = np.zeros(size_of_perimeter + 1)
+        y = np.zeros(size_of_perimeter + 1)
+
+        count = 0
+        for i in range(62, 86):
+            x[count] = i
+            y[count] = 271
+            count += 1
+        for i in range(271, 451):
+            x[count] = 86
+            y[count] = i
+            count += 1
+        for i in range(86, 62, -1):
+            x[count] = i
+            y[count] = 451
+            count += 1
+        for i in range(451, 271, -1):
+            x[count] = 62
+            y[count] = i
+            count += 1
+        x[-1] = 62
+        y[-1] = 271
+        print(x)
+        print(y)
+        #island_cl = optimize_circu(0, 0, nodes_num, nodes_dom, x, y)
+        island_cl = 3.24
+        print(island_cl)
+
+    if case == 4:
+        h = 2
+
+        # Importing files
+        path = "./files"
+        nodes_num = np.loadtxt(path + '/' + "4-num.txt", dtype = int)
+        nodes_num = np.rot90(nodes_num, -1)
+        nodes_dom = np.loadtxt(path + '/' + "4-dom.txt", dtype = int)
+        nodes_dom = np.rot90(nodes_dom, -1)
+        nodes_cl = None
+
+        island_cl = 3.2497812425922494
+
+        contourObj = np.loadtxt(path + '/' + "4-contourObj.txt", dtype = int)
+        x = contourObj[:, 1]
+        y = contourObj[:, 0]
+        print(x)
+        print(y)
+
+    ## General resolution
+
+    psi_grid = solver.solve_syst(nodes_num, nodes_dom, nodes_cl, flow_rate, island_cl)
 
     horiz_speeds, vert_speeds, norm_speeds = velocity.velocity(psi_grid, nodes_num, nodes_dom, h)
     print("Max speed : " + str(norm_speeds.max()))
@@ -101,42 +169,31 @@ if __name__=="__main__":
         flow_rate_computed += i*h # Because h = 2
 
     print("Computed flow rate : " + str(flow_rate_computed))
-    # norm_speeds = np.rot90(norm_speeds, 1)
-    # norm_speeds = np.flip(norm_speeds, 0)
     pressures = pressure.pressure(norm_speeds)
 
-    plt.subplot(1, 3, 1)
-    plt.imshow(vert_speeds, cmap="magma")
+    plt.subplot(3, 1, 1)
+    plt.imshow(norm_speeds, cmap="magma")
     plt.title("Norme de la vitesse")
-    plt.subplot(1, 3, 3)
+    plt.subplot(3, 1, 3)
     plt.imshow(psi_grid, cmap="magma")
     plt.title("Fonction de courant")
-    plt.subplot(1, 3, 2)
+    plt.subplot(3, 1, 2)
     plt.imshow(pressures, cmap="magma")
     plt.title("Pression")
 
-    x = [0, 1, 2, 3, 3, 3, 3, 2, 1, 0, 0, 0, 0]
-    y = [0, 0, 0, 0, 1, 2, 3, 3, 3, 3, 2, 1, 0]
-    # contourObj = np.loadtxt(path + '/' + "4-contourObj.txt", dtype = int)
-    # x = contourObj[:, 0]
-    # y = contourObj[:, 1]
-    x = np.array(x, dtype = float)
-    y = np.array(y, dtype = float)
-    for i in range(len(x)):
-        x[i] += 300
-        y[i] += 35
-    u = np.zeros_like(x, dtype = float)
-    v = np.zeros_like(y, dtype = float)
-    p = np.zeros_like(x, dtype = float)
-    for i in range(len(x)):
-        u[i] = horiz_speeds[int(x[i]), int(y[i])]
-        v[i] = vert_speeds[int(x[i]), int(y[i])]
-        p[i] = pressures[int(x[i]), int(y[i])]
+    if case != 1:
+        u = np.zeros_like(x, dtype = float)
+        v = np.zeros_like(y, dtype = float)
+        p = np.zeros_like(x, dtype = float)
+        for i in range(len(x)):
+            u[i] = horiz_speeds[int(x[i]), int(y[i])]
+            v[i] = vert_speeds[int(x[i]), int(y[i])]
+            p[i] = pressures[int(x[i]), int(y[i])]
 
-    c = circu.circu(u, v, x, y)
-    fx, fy = force.force(p, x, y)
-    print("Circulation : " + str(c))
-    print("Force : "+ str(fx) + " " + str(fy))
+        c = circu.circu(u, v, x, y)
+        fx, fy = force.force(p, x, y)
+        print("Circulation : " + str(c))
+        print("Force : "+ str(fx) + " " + str(fy))
 
-    print(time.time() - start_time)
+    print("Time to run : " + str(time.time() - start_time))
     plt.show()
