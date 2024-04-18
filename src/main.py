@@ -149,7 +149,7 @@ if __name__=="__main__":
 
         island_cl = 1.765026457295446872
 
-        contourObj = np.loadtxt(path + '/' + "4-contourObj.txt", dtype = int)
+        contourObj = np.loadtxt(path + '/' + "4-contourObj.txt", dtype = np.double)
         x = contourObj[:, 1]
         y = contourObj[:, 0]
         #island_cl = optimize(0, 0, nodes_num, nodes_dom, x, y)
@@ -170,15 +170,23 @@ if __name__=="__main__":
     print("Computed flow rate : " + str(flow_rate_computed))
     pressures = pressure.pressure(norm_speeds)
 
+    plt.figure(figsize = (16, 16), dpi = 100)
+
     plt.subplot(3, 1, 1)
-    plt.imshow(norm_speeds, cmap="magma")
+    im1 = plt.imshow(norm_speeds, cmap="magma")
     plt.title("Norme de la vitesse")
+    plt.colorbar(im1, ax = plt.gca(), shrink = 0.75)
+
     plt.subplot(3, 1, 3)
     plt.imshow(psi_grid, cmap="magma")
     plt.title("Fonction de courant")
+    plt.colorbar(im1, ax = plt.gca(), shrink = 0.75)
+
     plt.subplot(3, 1, 2)
     plt.imshow(pressures, cmap="magma")
     plt.title("Pression")
+
+    plt.colorbar(im1, ax = plt.gca(), shrink = 0.75)
 
     if case != 1:
         u = np.zeros_like(x, dtype = float)
