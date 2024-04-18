@@ -9,7 +9,7 @@ import pressure
 import circu
 import force
 
-def optimize_circu(goal, initial_guess, nodes_num, nodes_dom, x, y):
+def optimize(goal, initial_guess, nodes_num, nodes_dom, x, y):
     solution = newton(lambda k: solveOptimize(5, k, 2, nodes_num, nodes_dom, x, y, goal), initial_guess, tol=1e-17)
     return solution
 
@@ -34,7 +34,7 @@ def solveOptimize(flow_rate, island_cl, h, nodes_num, nodes_dom, x, y, goal):
 
     pressures = pressure.pressure(norm_speeds)
 
-    return (c - goal)
+    return (pressures[10][350] - pressures[85][350] - goal)
 
 if __name__=="__main__":
     start_time = time.time()
@@ -50,11 +50,11 @@ if __name__=="__main__":
         # Importing files
         path = "./files"
         nodes_num = np.loadtxt(path + '/' + "1-num.txt", dtype = int)
-        nodes_num = np.rot90(nodes_num, -1)
+        nodes_num = np.rot90(nodes_num, 1)
         nodes_dom = np.loadtxt(path + '/' + "1-dom.txt", dtype = int)
-        nodes_dom = np.rot90(nodes_dom, -1)
+        nodes_dom = np.rot90(nodes_dom, 1)
         nodes_cl = np.loadtxt(path + '/' + "1-cl.txt", dtype = float)
-        nodes_cl = np.rot90(nodes_cl, -1)
+        nodes_cl = np.rot90(nodes_cl, 1)
 
         ## Circulation and forces not needed
         island_cl = None
@@ -65,9 +65,9 @@ if __name__=="__main__":
         # Importing files
         path = "./files"
         nodes_num = np.loadtxt(path + '/' + "2-num.txt", dtype = int)
-        nodes_num = np.rot90(nodes_num, -1)
+        nodes_num = np.rot90(nodes_num, 1)
         nodes_dom = np.loadtxt(path + '/' + "2-dom.txt", dtype = int)
-        nodes_dom = np.rot90(nodes_dom, -1)
+        nodes_dom = np.rot90(nodes_dom, 1)
         nodes_cl = None
 
         island_cl = 2.5
@@ -94,7 +94,7 @@ if __name__=="__main__":
             count += 1
         x[-1] = 43
         y[-1] = 268
-        island_cl = optimize_circu(0, 0, nodes_num, nodes_dom, x, y)
+        island_cl = optimize(0, 0, nodes_num, nodes_dom, x, y)
         print(island_cl)
 
     if case == 3:
@@ -103,9 +103,9 @@ if __name__=="__main__":
         # Importing files
         path = "./files"
         nodes_num = np.loadtxt(path + '/' + "3-num.txt", dtype = int)
-        nodes_num = np.rot90(nodes_num, -1)
+        nodes_num = np.rot90(nodes_num, 1)
         nodes_dom = np.loadtxt(path + '/' + "3-dom.txt", dtype = int)
-        nodes_dom = np.rot90(nodes_dom, -1)
+        nodes_dom = np.rot90(nodes_dom, 1)
         nodes_cl = None
 
         size_of_perimeter = (86 - 62) * 2 + (451 - 271) * 2
@@ -133,7 +133,6 @@ if __name__=="__main__":
         y[-1] = 271
         print(x)
         print(y)
-        #island_cl = optimize_circu(0, 0, nodes_num, nodes_dom, x, y)
         island_cl = 3.24
         print(island_cl)
 
@@ -143,18 +142,18 @@ if __name__=="__main__":
         # Importing files
         path = "./files"
         nodes_num = np.loadtxt(path + '/' + "4-num.txt", dtype = int)
-        nodes_num = np.rot90(nodes_num, -1)
+        nodes_num = np.rot90(nodes_num, 1)
         nodes_dom = np.loadtxt(path + '/' + "4-dom.txt", dtype = int)
-        nodes_dom = np.rot90(nodes_dom, -1)
+        nodes_dom = np.rot90(nodes_dom, 1)
         nodes_cl = None
 
-        island_cl = 3.2497812425922494
+        island_cl = 1.765026457295446872
 
         contourObj = np.loadtxt(path + '/' + "4-contourObj.txt", dtype = int)
         x = contourObj[:, 1]
         y = contourObj[:, 0]
-        print(x)
-        print(y)
+        #island_cl = optimize(0, 0, nodes_num, nodes_dom, x, y)
+        print(island_cl)
 
     ## General resolution
 
@@ -165,7 +164,7 @@ if __name__=="__main__":
     print("Mean speed : " + str(norm_speeds.mean()))
 
     flow_rate_computed = 0
-    for i in vert_speeds[1]:
+    for i in horiz_speeds[:, 1]:
         flow_rate_computed += i*h # Because h = 2
 
     print("Computed flow rate : " + str(flow_rate_computed))
